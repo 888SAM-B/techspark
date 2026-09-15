@@ -39,7 +39,7 @@ const Register: React.FC<Props> = ({ onRegisterSuccess, onNavigateToLogin }) => 
         setSuccess(result.message);
         setTimeout(() => {
           onRegisterSuccess();
-        }, 2000);
+        }, 1500);
       } else {
         setError(result.message);
       }
@@ -49,25 +49,41 @@ const Register: React.FC<Props> = ({ onRegisterSuccess, onNavigateToLogin }) => 
   };
 
   return (
-    <div className="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-lg border border-gray-200 animate-fade-in">
-      <h2 className="text-3xl font-bold text-gray-900 mb-2 text-center">Create Your Account</h2>
-      <p className="text-gray-600 mb-8 text-center">Join the community and start your skilling journey.</p>
+    <div className="max-w-md mx-auto bg-white p-8 sm:p-10 rounded-3xl shadow-lg border border-[#EAE2D6] animate-fade-in my-8">
+      {/* Brand Icon Header */}
+      <div className="text-center mb-8">
+        <img
+          src="/lm-logo.png"
+          alt="LearnMate"
+          className="h-16 w-auto mx-auto mb-4 object-contain"
+        />
+        <h2 className="text-3xl font-extrabold text-[#1B2615] tracking-tight">Create Account</h2>
+        <p className="text-[#5C6A44] text-sm mt-1">Join LearnMate to unlock your personalized pathway</p>
+      </div>
 
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
-          <span className="block sm:inline">{error}</span>
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm mb-6 flex items-center gap-2" role="alert">
+          <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+          </svg>
+          <span>{error}</span>
         </div>
       )}
 
       {success && (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
-          <span className="block sm:inline">{success} Redirecting to login...</span>
+        <div className="bg-[#ECF0E6] border border-[#C2D0B0] text-[#2C3420] px-4 py-3 rounded-xl text-sm mb-6 flex items-center gap-2" role="alert">
+          <svg className="w-4 h-4 text-[#8B9A6E] flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+          </svg>
+          <span className="font-medium">{success} Redirecting to login...</span>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label htmlFor="reg-username" className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+          <label htmlFor="reg-username" className="block text-xs font-bold text-[#465134] uppercase tracking-wider mb-1.5">
+            Choose Username
+          </label>
           <input
             type="text"
             name="username"
@@ -75,12 +91,15 @@ const Register: React.FC<Props> = ({ onRegisterSuccess, onNavigateToLogin }) => 
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition"
-            placeholder="Choose a username"
+            className="w-full px-4 py-2.5 bg-[#F6F8F3] border border-[#DBE3CF] rounded-xl text-[#1B2615] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#8B9A6E] focus:border-[#8B9A6E] transition text-sm"
+            placeholder="e.g. priya_sharma"
           />
         </div>
+
         <div>
-          <label htmlFor="reg-password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <label htmlFor="reg-password" className="block text-xs font-bold text-[#465134] uppercase tracking-wider mb-1.5">
+            Password (min. 6 characters)
+          </label>
           <input
             type="password"
             name="password"
@@ -88,12 +107,15 @@ const Register: React.FC<Props> = ({ onRegisterSuccess, onNavigateToLogin }) => 
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition"
-            placeholder="Create a strong password"
+            className="w-full px-4 py-2.5 bg-[#F6F8F3] border border-[#DBE3CF] rounded-xl text-[#1B2615] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#8B9A6E] focus:border-[#8B9A6E] transition text-sm"
+            placeholder="••••••••"
           />
         </div>
+
         <div>
-          <label htmlFor="reg-confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+          <label htmlFor="reg-confirmPassword" className="block text-xs font-bold text-[#465134] uppercase tracking-wider mb-1.5">
+            Confirm Password
+          </label>
           <input
             type="password"
             name="confirmPassword"
@@ -101,27 +123,31 @@ const Register: React.FC<Props> = ({ onRegisterSuccess, onNavigateToLogin }) => 
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition"
-            placeholder="Confirm your password"
+            className="w-full px-4 py-2.5 bg-[#F6F8F3] border border-[#DBE3CF] rounded-xl text-[#1B2615] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#8B9A6E] focus:border-[#8B9A6E] transition text-sm"
+            placeholder="••••••••"
           />
         </div>
-        <div>
+
+        <div className="pt-2">
           <button
             type="submit"
             disabled={!!success || isLoading}
-            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="w-full py-3 px-4 rounded-xl text-sm font-bold text-white bg-[#8B9A6E] hover:bg-[#758458] shadow-sm hover:shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Registering...' : 'Register'}
+            {isLoading ? 'Creating Account...' : 'Register & Start Learning'}
           </button>
         </div>
       </form>
 
-      <p className="text-center text-sm text-gray-600 mt-8">
+      <div className="mt-8 pt-6 border-t border-[#EAE2D6] text-center text-sm text-[#5C6A44]">
         Already have an account?{' '}
-        <button onClick={onNavigateToLogin} className="font-medium text-indigo-600 hover:text-indigo-500">
-          Log in here
+        <button
+          onClick={onNavigateToLogin}
+          className="font-bold text-[#8B9A6E] hover:text-[#5C6A44] transition underline"
+        >
+          Sign in here
         </button>
-      </p>
+      </div>
     </div>
   );
 };

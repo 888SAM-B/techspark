@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LearnerProfile, LearningPathwayData, PathwayStep, QuizQuestion, QuizResult, User } from './types';
 import Header from './components/Header';
+import LandingPage from './components/LandingPage';
 import LearnerProfileForm from './components/LearnerProfileForm';
 import LearningPathway from './components/LearningPathway';
 import StepDetailView from './components/StepDetailView';
@@ -11,13 +12,16 @@ import Dashboard from './components/Dashboard';
 import Login from './components/Login';
 import Register from './components/Register';
 import Certificate from './components/Certificate';
-import { getUserByUsername, updateUser, registerUser as registerUserService } from './services/userService';
+import { getUserByUsername, updateUser } from './services/userService';
 
-type View = 'login' | 'register' | 'form' | 'dashboard' | 'pathway' | 'step' | 'quiz' | 'certificate';
+type View = 'landing' | 'login' | 'register' | 'form' | 'dashboard' | 'pathway' | 'step' | 'quiz' | 'certificate';
+
+const SESSION_KEY = 'techspark_active_user';
 
 const App: React.FC = () => {
-  const [view, setView] = useState<View>('login');
+  const [view, setView] = useState<View>('landing');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isRestoringSession, setIsRestoringSession] = useState<boolean>(true);
 
   const [learnerProfile, setLearnerProfile] = useState<LearnerProfile | null>(null);
   const [learningPath, setLearningPath] = useState<LearningPathwayData | null>(null);
@@ -31,9 +35,41 @@ const App: React.FC = () => {
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[] | null>(null);
   const [isGeneratingQuiz, setIsGeneratingQuiz] = useState<boolean>(false);
 
-  // Effect to sync state changes back to MongoDB
+  // Restore authenticated session from localStorage on mount
   useEffect(() => {
-    if (currentUser) {
+    const restoreSession = async () => {
+      try {
+        const savedUsername = localStorage.getItem(SESSION_KEY);
+        if (savedUsername) {
+          const user = await getUserByUsername(savedUsername);
+          if (user) {
+            loadUserData(user);
+            if (user.pathway) {
+              setView('dashboard');
+            } else {
+              setView('form');
+            }
+          } else {
+            localStorage.removeItem(SESSION_KEY);
+            setView('landing');
+          }
+        } else {
+          setView('landing');
+        }
+      } catch (err) {
+        console.error('Failed to restore session:', err);
+        setView('landing');
+      } finally {
+        setIsRestoringSession(false);
+      }
+    };
+
+    restoreSession();
+  }, []);
+
+  // Sync user state back to MongoDB
+  useEffect(() => {
+    if (currentUser && !isRestoringSession) {
       const updatedUser: User = {
         ...currentUser,
         profile: learnerProfile,
@@ -41,23 +77,23 @@ const App: React.FC = () => {
         completedSteps: completedSteps,
         quizResult: quizResult,
       };
-      // Avoid re-setting the same user object if nothing has changed.
       if (JSON.stringify(updatedUser) !== JSON.stringify(currentUser)) {
         setCurrentUser(updatedUser);
-        updateUser(updatedUser); // async, fire-and-forget is fine here
+        updateUser(updatedUser);
       }
     }
-  }, [learnerProfile, learningPath, completedSteps, quizResult]);
+  }, [learnerProfile, learningPath, completedSteps, quizResult, isRestoringSession]);
 
   const loadUserData = (user: User) => {
     setCurrentUser(user);
     setLearnerProfile(user.profile);
     setLearningPath(user.pathway);
-    setCompletedSteps(user.completedSteps);
-    setQuizResult(user.quizResult);
+    setCompletedSteps(user.completedSteps || []);
+    setQuizResult(user.quizResult || null);
   };
 
   const handleLogin = async (user: User) => {
+    localStorage.setItem(SESSION_KEY, user.username);
     loadUserData(user);
     if (user.pathway) {
       setView('dashboard');
@@ -67,6 +103,7 @@ const App: React.FC = () => {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem(SESSION_KEY);
     setCurrentUser(null);
     setLearnerProfile(null);
     setLearningPath(null);
@@ -75,14 +112,12 @@ const App: React.FC = () => {
     setSelectedStep(null);
     setQuizQuestions(null);
     setError(null);
-    setView('login');
+    setView('landing');
   };
 
   const handleToggleStepCompletion = (stepTitle: string) => {
-    setCompletedSteps(prev =>
-      prev.includes(stepTitle)
-        ? prev.filter(title => title !== stepTitle)
-        : [...prev, stepTitle]
+    setCompletedSteps((prev) =>
+      prev.includes(stepTitle) ? prev.filter((title) => title !== stepTitle) : [...prev, stepTitle]
     );
   };
 
@@ -140,7 +175,7 @@ const App: React.FC = () => {
         setQuizQuestions(questions);
         setView('quiz');
       } else {
-        throw new Error("Failed to generate quiz questions.");
+        throw new Error('Failed to generate quiz questions.');
       }
     } catch (err) {
       console.error(err);
@@ -151,12 +186,16 @@ const App: React.FC = () => {
   };
 
   const handleSubmitQuiz = (score: number, totalQuestions: number) => {
-    const passed = score >= 30;
+    const passed = totalQuestions > 0 ? score / totalQuestions >= 0.6 : false;
     const result: QuizResult = {
       score,
       totalQuestions,
       passed,
-      completionDate: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }),
+      completionDate: new Date().toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      }),
     };
     setQuizResult(result);
     setQuizQuestions(null);
@@ -170,30 +209,41 @@ const App: React.FC = () => {
 
   const handleViewCertificate = () => {
     setView('certificate');
-  }
+  };
 
   const renderContent = () => {
+    if (isRestoringSession) {
+      return (
+        <div className="text-center p-20 animate-fade-in flex flex-col items-center justify-center min-h-[50vh]">
+          <LoadingSpinner />
+          <p className="text-[#5C6A44] mt-4 text-sm font-semibold">Loading LearnMate...</p>
+        </div>
+      );
+    }
+
     if (isLoading || isGeneratingQuiz) {
       return (
-        <div className="text-center p-10">
+        <div className="text-center p-12 animate-fade-in max-w-xl mx-auto my-12 bg-white rounded-3xl border border-[#EAE2D6] shadow-sm">
           <LoadingSpinner />
-          <h2 className="text-2xl font-semibold text-gray-700 mt-6">
+          <h2 className="text-2xl font-extrabold text-[#1B2615] mt-6">
             {isGeneratingQuiz ? 'Preparing Your Final Assessment...' : 'Crafting Your Personalized Pathway...'}
           </h2>
-          <p className="text-gray-500 mt-2 max-w-xl mx-auto">
-            {isGeneratingQuiz ? 'This may take a moment. The AI is generating 50 unique questions based on your learning path.' : 'Our AI is analyzing your profile against millions of data points to create the perfect skilling journey for you.'}
+          <p className="text-[#5C6A44] text-xs sm:text-sm mt-2 leading-relaxed">
+            {isGeneratingQuiz
+              ? 'Our AI is compiling customized assessment questions aligned with your completed curriculum.'
+              : 'Our AI is analyzing your background against vocational skilling frameworks to generate your tailored journey.'}
           </p>
         </div>
       );
     }
 
-    if (error && !['login', 'register'].includes(view)) {
+    if (error && !['login', 'register', 'landing'].includes(view)) {
       return (
-        <div className="text-center p-10 bg-red-50 border border-red-200 rounded-lg max-w-2xl mx-auto">
-          <p className="text-red-600 font-semibold">{error}</p>
+        <div className="text-center p-10 bg-red-50 border border-red-200 rounded-3xl max-w-2xl mx-auto animate-fade-in my-8">
+          <p className="text-red-700 font-bold">{error}</p>
           <button
             onClick={handleResetPathway}
-            className="mt-4 px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+            className="mt-4 px-6 py-2.5 bg-[#8B9A6E] hover:bg-[#758458] text-white font-bold text-xs rounded-xl shadow-sm transition"
           >
             Start Over
           </button>
@@ -202,6 +252,19 @@ const App: React.FC = () => {
     }
 
     switch (view) {
+      case 'landing':
+        return (
+          <LandingPage
+            onGetStarted={() => {
+              if (currentUser) {
+                setView(learningPath ? 'dashboard' : 'form');
+              } else {
+                setView('register');
+              }
+            }}
+            onSignIn={() => setView('login')}
+          />
+        );
       case 'login':
         return <Login onLogin={handleLogin} onNavigateToRegister={() => setView('register')} />;
       case 'register':
@@ -210,45 +273,50 @@ const App: React.FC = () => {
         return <LearnerProfileForm onSubmit={handleProfileSubmit} />;
       case 'dashboard':
         if (learnerProfile && learningPath) {
-          return <Dashboard
-            profile={learnerProfile}
-            pathway={learningPath}
-            completedSteps={completedSteps}
-            quizResult={quizResult}
-            onViewPathway={() => setView('pathway')}
-            onContinueLearning={handleSelectStep}
-            onStartQuiz={handleStartQuiz}
-            onReset={handleResetPathway}
-            isGeneratingQuiz={isGeneratingQuiz}
-            onViewCertificate={handleViewCertificate}
-          />;
+          return (
+            <Dashboard
+              profile={learnerProfile}
+              pathway={learningPath}
+              completedSteps={completedSteps}
+              quizResult={quizResult}
+              onViewPathway={() => setView('pathway')}
+              onContinueLearning={handleSelectStep}
+              onStartQuiz={handleStartQuiz}
+              onReset={handleResetPathway}
+              isGeneratingQuiz={isGeneratingQuiz}
+              onViewCertificate={handleViewCertificate}
+            />
+          );
         }
-        // If user is logged in but has no path, send to form
         return <LearnerProfileForm onSubmit={handleProfileSubmit} />;
       case 'pathway':
         if (learnerProfile && learningPath) {
-          return <LearningPathway
-            pathway={learningPath}
-            profile={learnerProfile}
-            onBack={handleBackToDashboard}
-            onSelectStep={handleSelectStep}
-            completedSteps={completedSteps}
-            onToggleStepCompletion={handleToggleStepCompletion}
-            onStartQuiz={handleStartQuiz}
-            isGeneratingQuiz={isGeneratingQuiz}
-          />;
+          return (
+            <LearningPathway
+              pathway={learningPath}
+              profile={learnerProfile}
+              onBack={handleBackToDashboard}
+              onSelectStep={handleSelectStep}
+              completedSteps={completedSteps}
+              onToggleStepCompletion={handleToggleStepCompletion}
+              onStartQuiz={handleStartQuiz}
+              isGeneratingQuiz={isGeneratingQuiz}
+            />
+          );
         }
         return null;
       case 'step':
         if (selectedStep && learnerProfile && learningPath) {
-          return <StepDetailView
-            step={selectedStep}
-            profile={learnerProfile}
-            pathway={learningPath}
-            onBack={handleBackToDashboard}
-            isCompleted={completedSteps.includes(selectedStep.title)}
-            onToggleCompletion={() => handleToggleStepCompletion(selectedStep.title)}
-          />;
+          return (
+            <StepDetailView
+              step={selectedStep}
+              profile={learnerProfile}
+              pathway={learningPath}
+              onBack={handleBackToDashboard}
+              isCompleted={completedSteps.includes(selectedStep.title)}
+              onToggleCompletion={() => handleToggleStepCompletion(selectedStep.title)}
+            />
+          );
         }
         return null;
       case 'quiz':
@@ -258,25 +326,45 @@ const App: React.FC = () => {
         return null;
       case 'certificate':
         if (currentUser && learnerProfile && learningPath && quizResult?.passed) {
-          return <Certificate
-            user={currentUser}
-            pathway={learningPath}
-            result={quizResult}
-            onBackToDashboard={handleBackToDashboard}
-          />;
+          return (
+            <Certificate
+              user={currentUser}
+              pathway={learningPath}
+              result={quizResult}
+              onBackToDashboard={handleBackToDashboard}
+            />
+          );
         }
-        // Fallback to dashboard if certificate data is missing
         setView('dashboard');
         return null;
       default:
-        return <Login onLogin={handleLogin} onNavigateToRegister={() => setView('register')} />;
+        return (
+          <LandingPage
+            onGetStarted={() => setView('register')}
+            onSignIn={() => setView('login')}
+          />
+        );
     }
-  }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-800">
-      <Header user={currentUser} onLogout={handleLogout} />
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-[#F7F2EB] text-[#1B2615] flex flex-col font-sans selection:bg-[#8B9A6E] selection:text-white">
+      <Header
+        user={currentUser}
+        onLogout={handleLogout}
+        onNavigateHome={() => {
+          if (currentUser) {
+            setView(learningPath ? 'dashboard' : 'form');
+          } else {
+            setView('landing');
+          }
+        }}
+        onNavigateLogin={() => setView('login')}
+        onNavigateRegister={() => setView('register')}
+        onNavigateDashboard={() => setView('dashboard')}
+        currentView={view}
+      />
+      <main className={view === 'landing' ? 'w-full' : 'container mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1'}>
         {renderContent()}
       </main>
     </div>

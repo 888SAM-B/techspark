@@ -1,41 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF--8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/lm-logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Skilling Pathfinder India</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>LearnMate | AI Skilling Pathfinder India</title>
+    
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-      body {
-        font-family: 'Inter', sans-serif;
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&family=Sacramento&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS with Custom Theme Configuration -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              sage: {
+                50: '#F6F8F3',
+                100: '#ECF0E6',
+                200: '#DBE3CF',
+                300: '#C2D0B0',
+                400: '#A4B58C',
+                500: '#8B9A6E', // Primary requested green
+                600: '#758458',
+                700: '#5C6A44',
+                800: '#465134',
+                900: '#2C3420',
+              },
+              cream: '#F7F2EB',   // Requested off-white / light cream
+              sand: '#EAE2D6',    // Requested warm sand
+              softgray: '#EEEEEE',// Requested soft gray
+              forest: '#1B2615',
+            },
+            fontFamily: {
+              sans: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
+              serif: ['"Playfair Display"', 'serif'],
+              script: ['Sacramento', 'cursive'],
+            }
+          }
+        }
       }
-      @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-      .animate-fade-in {
-        animation: fadeIn 0.5s ease-out forwards;
-      }
-    </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script type="importmap">
-{
-  "imports": {
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.20.0",
-    "react/": "https://aistudiocdn.com/react@^19.1.1/",
-    "react": "https://aistudiocdn.com/react@^19.1.1"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
-</head>
-  <body class="bg-gray-50">
+    </script>
+    
+    <!-- PDF Generation Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <link rel="stylesheet" href="/index.css">
+  </head>
+  <body class="bg-[#F7F2EB] text-[#1B2615] antialiased selection:bg-[#8B9A6E] selection:text-white">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>
